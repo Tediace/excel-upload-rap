@@ -1,20 +1,19 @@
-class lhc_Building definition inheriting from cl_abap_behavior_handler.
-  private section.
+CLASS lhc_Building DEFINITION INHERITING FROM cl_abap_behavior_handler.
+  PRIVATE SECTION.
+    METHODS get_instance_authorizations FOR INSTANCE AUTHORIZATION
+      IMPORTING keys REQUEST requested_authorizations FOR Building RESULT result.
 
-    methods get_instance_authorizations for instance authorization
-      importing keys request requested_authorizations for Building result result.
+    METHODS validateNRooms FOR VALIDATE ON SAVE
+      IMPORTING keys FOR Building~validateNRooms.
 
-    methods validateNRooms for validate on save
-      importing keys for Building~validateNRooms.
+ENDCLASS.
 
-endclass.
 
-class lhc_Building implementation.
+CLASS lhc_Building IMPLEMENTATION.
+  METHOD get_instance_authorizations.
+  ENDMETHOD.
 
-  method get_instance_authorizations.
-  endmethod.
-
-  method validateNRooms.
+  METHOD validateNRooms.
     " reading the building entites
     READ ENTITIES OF zmn_i_buildings_26 IN LOCAL MODE
          ENTITY Building
@@ -54,25 +53,43 @@ class lhc_Building implementation.
       CLEAR lv_msg.
 
     ENDLOOP.
-  endmethod.
+  ENDMETHOD.
+ENDCLASS.
 
-endclass.
 
-class lsc_ZMN_I_BUILDINGS_26 definition inheriting from cl_abap_behavior_saver.
-  protected section.
+CLASS lsc_ZMN_I_BUILDINGS_26 DEFINITION INHERITING FROM cl_abap_behavior_saver.
+  PROTECTED SECTION.
+    METHODS adjust_numbers   REDEFINITION.
 
-    methods adjust_numbers redefinition.
+    METHODS cleanup_finalize REDEFINITION.
 
-    methods cleanup_finalize redefinition.
+ENDCLASS.
 
-endclass.
 
-class lsc_ZMN_I_BUILDINGS_26 implementation.
+CLASS lsc_ZMN_I_BUILDINGS_26 IMPLEMENTATION.
+  METHOD adjust_numbers.
+    DATA lv_bldg_num TYPE n LENGTH 5.
 
-  method adjust_numbers.
-  endmethod.
+    LOOP AT mapped-building ASSIGNING FIELD-SYMBOL(<map_building>) WHERE %key-BuildingId IS INITIAL.
+      TRY.
+          " using number range to generate the building id
+          cl_numberrange_runtime=>number_get( EXPORTING nr_range_nr       = 'N1'
+                                                        object            = 'ZNR_BLD_26'
+                                                        quantity          = 1
+                                              IMPORTING number            = DATA(number)
+                                                        returncode        = DATA(ret_code)
+                                                        returned_quantity = DATA(ret_qty) ).
+          lv_bldg_num = number.
+          <map_building>-%key-BuildingId = |B{ lv_bldg_num }|.
+        CATCH cx_nr_object_not_found
+              cx_number_ranges INTO DATA(lox_exp).
+          APPEND VALUE #( %key = <map_building>-%key
+                          %msg = lox_exp )
+                 TO reported-building.
+      ENDTRY.
+    ENDLOOP.
+  ENDMETHOD.
 
-  method cleanup_finalize.
-  endmethod.
-
-endclass.
+  METHOD cleanup_finalize.
+  ENDMETHOD.
+ENDCLASS.
