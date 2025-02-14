@@ -1,0 +1,4 @@
+@EndUserText.label: 'Building Service'
+define service ZUI_BUILDING {
+  expose zmn_c_buildings_26 as Buildings;
+}
