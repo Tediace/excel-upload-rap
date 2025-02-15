@@ -11,6 +11,7 @@ ENDCLASS.
 
 CLASS lhc_Building IMPLEMENTATION.
   METHOD get_instance_authorizations.
+  " test commit from bas
   ENDMETHOD.
 
   METHOD validateNRooms.
